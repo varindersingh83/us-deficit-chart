@@ -120,6 +120,58 @@
       letter-spacing: -0.03em;
     }
 
+    .stat-subtext {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .footer-note {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .visitor-inline {
+      min-height: 18px;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .visitor-inline .gcvc,
+    .visitor-inline .gcvc > div {
+      display: inline;
+      width: auto;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      color: var(--muted);
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      box-shadow: none;
+    }
+
+    .visitor-inline #gcvc-for,
+    .visitor-inline #gcvc-by {
+      display: none;
+    }
+
+    .visitor-inline #gcvc-views {
+      color: var(--ink);
+      font-weight: 800;
+      letter-spacing: 0.1em;
+    }
+
+    .visitor-inline #gcvc-views::before {
+      content: "Visitor#: ";
+      color: var(--muted);
+      font-weight: 700;
+    }
+
     .chart-wrap {
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
@@ -251,11 +303,15 @@
 
     <div class="footer">
       <div><strong>Reading the chart:</strong> Upward red bars mean the government ran a deficit that year. Downward green bars mark a surplus.</div>
-      <div><strong>Note:</strong> 2026 is shown as a projection based on the source data you provided.</div>
+      <div class="footer-note">
+        <div><strong>Note:</strong> 2026 is shown as a projection based on the source data you provided.</div>
+        <div class="visitor-inline" id="visitorCounter"><span class="stat-subtext">Visitor#: 00000</span></div>
+      </div>
     </div>
   </main>
 
   <script>
+    const GOATCOUNTER_URL = "https://varindersingh83.goatcounter.com/count";
     const data = [
       { year: 1980, annual: -0.07, debt: 0.91, admin: "Jimmy Carter", event: "High inflation; Iran hostage crisis; early 1980s recession begins." },
       { year: 1981, annual: -0.08, debt: 1.00, admin: "Ronald Reagan", event: "Reagan tax cuts passed; severe recession takes hold." },
@@ -367,6 +423,47 @@
       node.innerHTML = `<div class="stat-label">${stat.label}</div><div class="stat-value">${stat.value}</div>`;
       summary.appendChild(node);
     });
+
+    function initVisitorCounter() {
+      const counterRoot = document.getElementById("visitorCounter");
+      if (!counterRoot) return;
+
+      if (!GOATCOUNTER_URL) {
+        return;
+      }
+
+      counterRoot.innerHTML = "";
+
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = "https://gc.zgo.at/count.js";
+      script.dataset.goatcounter = GOATCOUNTER_URL;
+      script.onload = () => {
+        const timer = window.setInterval(() => {
+          if (window.goatcounter && window.goatcounter.visit_count) {
+            window.clearInterval(timer);
+            window.goatcounter.visit_count({
+              append: "#visitorCounter",
+              style: `
+                div {
+                  background-color: transparent;
+                  color: #596574;
+                  font-family: "Avenir Next", "Segoe UI", sans-serif;
+                  width: auto;
+                  padding: 0;
+                  margin: 0;
+                  border: 0;
+                  box-shadow: none;
+                }
+              `
+            });
+          }
+        }, 100);
+      };
+      document.body.appendChild(script);
+    }
+
+    initVisitorCounter();
 
     const make = (name, attrs = {}, parent = svg) => {
       const el = document.createElementNS(NS, name);
