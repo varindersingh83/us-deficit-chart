@@ -591,18 +591,20 @@
 
     const finalPoint = data[data.length - 1];
     make("text", {
-      x: x(finalPoint.year) - 94,
-      y: yDebt(finalPoint.debt) + 8,
+      x: width - 26,
+      y: yDebt(finalPoint.debt) - 8,
       fill: "#0d5c63",
       "font-size": "28",
-      "font-weight": "800"
+      "font-weight": "800",
+      "text-anchor": "end"
     }).textContent = `$${finalPoint.debt.toFixed(1)}T`;
 
     make("text", {
-      x: x(finalPoint.year) - 94,
-      y: yDebt(finalPoint.debt) + 30,
+      x: width - 26,
+      y: yDebt(finalPoint.debt) + 14,
       fill: "#5e6a76",
-      "font-size": "14"
+      "font-size": "14",
+      "text-anchor": "end"
     }).textContent = `${finalPoint.year} projected total debt`;
     function formatAnnual(value) {
       const sign = value >= 0 ? "+" : "-";
