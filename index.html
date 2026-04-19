@@ -130,44 +130,6 @@
       gap: 4px;
     }
 
-    .visitor-inline {
-      min-height: 18px;
-      font-size: 0.82rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .visitor-inline .gcvc,
-    .visitor-inline .gcvc > div {
-      display: inline;
-      width: auto;
-      border: 0;
-      background: transparent;
-      padding: 0;
-      margin: 0;
-      color: var(--muted);
-      font-family: "Avenir Next", "Segoe UI", sans-serif;
-      box-shadow: none;
-    }
-
-    .visitor-inline #gcvc-for,
-    .visitor-inline #gcvc-by {
-      display: none;
-    }
-
-    .visitor-inline #gcvc-views {
-      color: var(--ink);
-      font-weight: 800;
-      letter-spacing: 0.1em;
-    }
-
-    .visitor-inline #gcvc-views::before {
-      content: "Visitor#: ";
-      color: var(--muted);
-      font-weight: 700;
-    }
-
     .chart-wrap {
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
@@ -296,13 +258,11 @@
       <div><strong>Reading the chart:</strong> Upward red bars mean the government ran a deficit that year. The teal line tracks debt in dollars, while the gold line converts that debt into metric tons of gold at each year's average USD gold price.</div>
       <div class="footer-note">
         <div><strong>Note:</strong> 2026 debt is shown as a projection, and 2026 gold uses a year-to-date average price.</div>
-        <div class="visitor-inline" id="visitorCounter"><span class="stat-subtext">Visitor#: 00000</span></div>
       </div>
     </div>
   </main>
 
   <script>
-    const GOATCOUNTER_URL = "https://varindersingh83.goatcounter.com/count";
     const rawData = [
       { year: 1980, annual: -0.07, debt: 0.91, admin: "Jimmy Carter", event: "High inflation; Iran hostage crisis; early 1980s recession begins." },
       { year: 1981, annual: -0.08, debt: 1.00, admin: "Ronald Reagan", event: "Reagan tax cuts passed; severe recession takes hold." },
@@ -456,64 +416,6 @@
       "Donald Trump": "Trump",
       "Joe Biden": "Biden"
     };
-
-    function initVisitorCounter() {
-      const counterRoot = document.getElementById("visitorCounter");
-      if (!counterRoot) return;
-
-      if (!GOATCOUNTER_URL) {
-        return;
-      }
-
-      const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
-      if (localHosts.has(window.location.hostname)) {
-        counterRoot.innerHTML = '<span class="stat-subtext">Visitor#: live on deployed site</span>';
-        return;
-      }
-
-      counterRoot.innerHTML = "";
-
-      const script = document.createElement("script");
-      script.async = true;
-      script.src = "https://gc.zgo.at/count.js";
-      script.dataset.goatcounter = GOATCOUNTER_URL;
-      script.onload = () => {
-        const renderCounter = () => {
-          if (!window.goatcounter?.visit_count) {
-            return false;
-          }
-
-          counterRoot.innerHTML = "";
-          window.goatcounter.visit_count({
-            append: "#visitorCounter",
-            no_branding: true,
-            type: "html"
-          });
-          return true;
-        };
-
-        if (renderCounter()) {
-          return;
-        }
-
-        let attempts = 0;
-        const timer = window.setInterval(() => {
-          attempts += 1;
-          if (renderCounter()) {
-            window.clearInterval(timer);
-            return;
-          }
-
-          if (attempts >= 20) {
-            window.clearInterval(timer);
-            counterRoot.innerHTML = '<span class="stat-subtext">Visitor#: unavailable</span>';
-          }
-        }, 150);
-      };
-      document.body.appendChild(script);
-    }
-
-    initVisitorCounter();
 
     const make = (name, attrs = {}, parent = svg) => {
       const el = document.createElementNS(NS, name);
