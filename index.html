@@ -910,13 +910,15 @@
           path.style.strokeDashoffset = String(goldLength * (1 - goldDraw));
         });
 
-        debtDots.forEach(({ dot }, index) => {
+        debtDots.forEach(({ dot, targetY }, index) => {
           const dotProgress = clamp((rawProgress - 0.54 - index * 0.004) / 0.16);
+          dot.setAttribute("cy", targetY);
           dot.style.opacity = String(dotProgress);
         });
 
-        goldDots.forEach(({ dot }, index) => {
+        goldDots.forEach(({ dot, targetY }, index) => {
           const dotProgress = clamp((rawProgress - 0.68 - index * 0.004) / 0.16);
+          dot.setAttribute("cy", targetY);
           dot.style.opacity = String(dotProgress);
         });
 
