@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Great Divergence: How the U.S. Outran the Value of Gold.</title>
+  <title>The Great Divergence | How the U.S. Outran the Value of Gold</title>
   <meta name="description" content="A visual story of U.S. debt growth from 1980 to 2026, including annual deficits and a gold-weight comparison line." />
   <link rel="canonical" href="https://varindersingh83.github.io/us-deficit-chart/" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="The Great Divergence: How the U.S. Outran the Value of Gold." />
+  <meta property="og:title" content="The Great Divergence | How the U.S. Outran the Value of Gold" />
   <meta property="og:description" content="See U.S. debt growth from 1980 to 2026, annual deficits, and how much gold that debt could buy each year." />
   <meta property="og:url" content="https://varindersingh83.github.io/us-deficit-chart/" />
   <meta property="og:site_name" content="The Great Divergence" />
@@ -16,7 +16,7 @@
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="Preview card showing U.S. debt growth versus gold-weight debt with chart lines and deficit bars." />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="The Great Divergence: How the U.S. Outran the Value of Gold." />
+  <meta name="twitter:title" content="The Great Divergence | How the U.S. Outran the Value of Gold" />
   <meta name="twitter:description" content="U.S. debt growth, annual deficits, and the gold-weight equivalent of that debt in one chart." />
   <meta name="twitter:image" content="https://varindersingh83.github.io/us-deficit-chart/og-preview.png" />
   <style>
@@ -105,6 +105,15 @@
       line-height: 0.95;
       letter-spacing: -0.03em;
       text-align: center;
+    }
+
+    .subheading {
+      margin: 10px 0 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.55vw, 1.45rem);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
     }
 
     .stat-subtext {
@@ -275,7 +284,8 @@
 <body>
   <main class="frame">
     <div class="eyebrow" style="text-align:center;">United States Fiscal Story • 1980–2026</div>
-    <h1>The Great Divergence: How the U.S. Outran the Value of Gold.</h1>
+    <h1>The Great Divergence</h1>
+    <p class="subheading">How the U.S. Outran the Value of Gold</p>
 
     <section class="chart-wrap" id="chartWrap">
       <svg id="chart" viewBox="0 0 1460 920" role="img" aria-label="US debt and annual deficit chart"></svg>
@@ -401,6 +411,7 @@
     const svg = document.getElementById("chart");
     const chartWrap = document.getElementById("chartWrap");
     const tooltip = document.getElementById("tooltip");
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const NS = "http://www.w3.org/2000/svg";
     const width = 1460;
     const height = 920;
@@ -631,39 +642,40 @@
       label.textContent = year;
     }
 
+    const debtPoints = data.map(d => ({ x: x(d.year), y: yDebt(d.debt) }));
+    const goldPoints = data.map(d => ({ x: x(d.year), y: yGold(d.goldMetricTons) }));
+    const debtPath = debtPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+    const goldPath = goldPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+    const areaPath = [
+      debtPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" "),
+      `L ${debtPoints[debtPoints.length - 1].x} ${debtBottom}`,
+      `L ${debtPoints[0].x} ${debtBottom} Z`
+    ].join(" ");
+
     const barGroup = make("g");
     const barWidth = Math.max(10, plotWidth / data.length - 7);
-    data.forEach(d => {
+    const barNodes = data.map(d => {
       const xx = x(d.year) - barWidth / 2;
-      const yy = yAnnual(d.annual);
-      const h = Math.abs(baselineY - yy);
-      make("rect", {
+      const targetY = yAnnual(d.annual);
+      const targetHeight = Math.abs(baselineY - targetY);
+      const rect = make("rect", {
         x: xx,
-        y: d.annual < 0 ? yy : baselineY,
+        y: baselineY,
         width: barWidth,
-        height: h,
+        height: 0,
         rx: 5,
         fill: d.annual < 0 ? "var(--deficit)" : "var(--surplus)",
         opacity: d.annual < 0 ? 0.92 : 0.9
       }, barGroup);
+      return { rect, annual: d.annual, targetY, targetHeight };
     });
 
-    const areaPath = [];
-    data.forEach((d, i) => {
-      areaPath.push(`${i === 0 ? "M" : "L"} ${x(d.year)} ${yDebt(d.debt)}`);
-    });
-    areaPath.push(`L ${x(data[data.length - 1].year)} ${debtBottom}`);
-    areaPath.push(`L ${x(data[0].year)} ${debtBottom} Z`);
-    make("path", {
-      d: areaPath.join(" "),
+    const debtAreaPath = make("path", {
+      d: areaPath,
       fill: "url(#debtArea)"
     });
 
-    const debtPath = data
-      .map((d, i) => `${i === 0 ? "M" : "L"} ${x(d.year)} ${yDebt(d.debt)}`)
-      .join(" ");
-
-    make("path", {
+    const debtGlowPath = make("path", {
       d: debtPath,
       fill: "none",
       stroke: "var(--line-glow)",
@@ -673,7 +685,7 @@
       filter: "url(#glow)"
     });
 
-    make("path", {
+    const debtLinePath = make("path", {
       d: debtPath,
       fill: "none",
       stroke: "url(#debtGradient)",
@@ -682,11 +694,7 @@
       "stroke-linejoin": "round"
     });
 
-    const goldPath = data
-      .map((d, i) => `${i === 0 ? "M" : "L"} ${x(d.year)} ${yGold(d.goldMetricTons)}`)
-      .join(" ");
-
-    make("path", {
+    const goldGlowPath = make("path", {
       d: goldPath,
       fill: "none",
       stroke: "var(--gold-glow)",
@@ -696,7 +704,7 @@
       filter: "url(#goldGlow)"
     });
 
-    make("path", {
+    const goldLinePath = make("path", {
       d: goldPath,
       fill: "none",
       stroke: "url(#goldGradient)",
@@ -706,6 +714,7 @@
       "stroke-dasharray": "9 7"
     });
 
+    const debtDots = [];
     data.forEach((d, index) => {
       const isMilestone =
         d.year === 1981 ||
@@ -715,14 +724,14 @@
 
       const dot = make("circle", {
         cx: x(d.year),
-        cy: yDebt(d.debt),
+        cy: baselineY,
         r: isMilestone ? 5.2 : 3.3,
         fill: "#fffdf8",
         stroke: "var(--line)",
         "stroke-width": isMilestone ? 3 : 2,
         tabindex: "0",
         "data-year": d.year,
-        style: "cursor:pointer; transition: transform 180ms ease, r 180ms ease, stroke-width 180ms ease, fill 180ms ease;"
+        style: "cursor:pointer; transition: transform 180ms ease, r 180ms ease, stroke-width 180ms ease, fill 180ms ease; opacity:0;"
       });
 
       const hoverRadius = isMilestone ? 8.8 : 7.2;
@@ -747,8 +756,10 @@
       dot.addEventListener("focus", activate);
       dot.addEventListener("mouseleave", deactivate);
       dot.addEventListener("blur", deactivate);
+      debtDots.push({ dot, targetY: yDebt(d.debt) });
     });
 
+    const goldDots = [];
     data.forEach((d, index) => {
       const isMilestone =
         d.year === 1981 ||
@@ -758,14 +769,14 @@
 
       const dot = make("circle", {
         cx: x(d.year),
-        cy: yGold(d.goldMetricTons),
+        cy: baselineY,
         r: isMilestone ? 4.8 : 3,
         fill: "#fff7e4",
         stroke: "var(--gold-line)",
         "stroke-width": isMilestone ? 2.6 : 1.8,
         tabindex: "0",
         "data-year": d.year,
-        style: "cursor:pointer; transition: transform 180ms ease, r 180ms ease, stroke-width 180ms ease, fill 180ms ease;"
+        style: "cursor:pointer; transition: transform 180ms ease, r 180ms ease, stroke-width 180ms ease, fill 180ms ease; opacity:0;"
       });
 
       const hoverRadius = isMilestone ? 8.4 : 6.8;
@@ -790,6 +801,7 @@
       dot.addEventListener("focus", activate);
       dot.addEventListener("mouseleave", deactivate);
       dot.addEventListener("blur", deactivate);
+      goldDots.push({ dot, targetY: yGold(d.goldMetricTons) });
     });
 
     const legend = make("g");
@@ -808,23 +820,118 @@
     });
 
     const finalPoint = data[data.length - 1];
-    make("text", {
+    const debtValueLabel = make("text", {
       x: width - 26,
       y: yDebt(finalPoint.debt) - 8,
       fill: "#0d5c63",
       "font-size": "28",
       "font-weight": "800",
-      "text-anchor": "end"
-    }).textContent = `$${finalPoint.debt.toFixed(1)}T`;
+      "text-anchor": "end",
+      opacity: "0"
+    });
+    debtValueLabel.textContent = `$${finalPoint.debt.toFixed(1)}T`;
 
-    make("text", {
+    const goldValueLabel = make("text", {
       x: width - 26,
       y: yGold(finalPoint.goldMetricTons) - 8,
       fill: "#9a6d13",
       "font-size": "24",
       "font-weight": "800",
-      "text-anchor": "end"
-    }).textContent = `${Math.round(finalPoint.goldMetricTons / 1000)}k t`;
+      "text-anchor": "end",
+      opacity: "0"
+    });
+    goldValueLabel.textContent = `${Math.round(finalPoint.goldMetricTons / 1000)}k t`;
+
+    function animateChartIn() {
+      const duration = 2200;
+      const start = performance.now();
+
+      const easeOutCubic = value => 1 - Math.pow(1 - value, 3);
+      const clamp = value => Math.max(0, Math.min(1, value));
+      const debtLength = debtLinePath.getTotalLength();
+      const goldLength = goldLinePath.getTotalLength();
+
+      [debtGlowPath, debtLinePath].forEach(path => {
+        path.style.strokeDasharray = `${debtLength}`;
+        path.style.strokeDashoffset = `${debtLength}`;
+      });
+
+      [goldGlowPath, goldLinePath].forEach(path => {
+        path.style.strokeDasharray = `${goldLength}`;
+        path.style.strokeDashoffset = `${goldLength}`;
+      });
+
+      debtAreaPath.style.opacity = "0";
+
+      if (prefersReducedMotion) {
+        barNodes.forEach(({ rect, annual, targetY, targetHeight }) => {
+          rect.setAttribute("y", annual < 0 ? targetY : baselineY);
+          rect.setAttribute("height", targetHeight);
+        });
+        debtAreaPath.style.opacity = "1";
+        [debtGlowPath, debtLinePath].forEach(path => path.style.strokeDashoffset = "0");
+        [goldGlowPath, goldLinePath].forEach(path => path.style.strokeDashoffset = "0");
+        debtDots.forEach(({ dot, targetY }) => {
+          dot.setAttribute("cy", targetY);
+          dot.style.opacity = "1";
+        });
+        goldDots.forEach(({ dot, targetY }) => {
+          dot.setAttribute("cy", targetY);
+          dot.style.opacity = "1";
+        });
+        debtValueLabel.setAttribute("y", yDebt(finalPoint.debt) - 8);
+        debtValueLabel.setAttribute("opacity", "1");
+        goldValueLabel.setAttribute("y", yGold(finalPoint.goldMetricTons) - 8);
+        goldValueLabel.setAttribute("opacity", "1");
+        return;
+      }
+
+      const frame = now => {
+        const rawProgress = Math.min(1, (now - start) / duration);
+        const debtDraw = easeOutCubic(clamp((rawProgress - 0.18) / 0.42));
+        const goldDraw = easeOutCubic(clamp((rawProgress - 0.34) / 0.42));
+        const areaOpacity = clamp((rawProgress - 0.42) / 0.24) * 0.92;
+        const labelOpacity = clamp((rawProgress - 0.72) / 0.16);
+
+        barNodes.forEach(({ rect, annual, targetHeight }, index) => {
+          const barStart = index * 0.012;
+          const barProgress = easeOutCubic(clamp((rawProgress - barStart) / 0.32));
+          const currentHeight = targetHeight * barProgress;
+          const currentY = annual < 0 ? baselineY - currentHeight : baselineY;
+          rect.setAttribute("y", currentY);
+          rect.setAttribute("height", currentHeight);
+        });
+
+        debtAreaPath.style.opacity = String(areaOpacity);
+        [debtGlowPath, debtLinePath].forEach(path => {
+          path.style.strokeDashoffset = String(debtLength * (1 - debtDraw));
+        });
+        [goldGlowPath, goldLinePath].forEach(path => {
+          path.style.strokeDashoffset = String(goldLength * (1 - goldDraw));
+        });
+
+        debtDots.forEach(({ dot }, index) => {
+          const dotProgress = clamp((rawProgress - 0.54 - index * 0.004) / 0.16);
+          dot.style.opacity = String(dotProgress);
+        });
+
+        goldDots.forEach(({ dot }, index) => {
+          const dotProgress = clamp((rawProgress - 0.68 - index * 0.004) / 0.16);
+          dot.style.opacity = String(dotProgress);
+        });
+
+        debtValueLabel.setAttribute("opacity", String(labelOpacity));
+        goldValueLabel.setAttribute("opacity", String(Math.max(0, labelOpacity - 0.08)));
+
+        if (rawProgress < 1) {
+          requestAnimationFrame(frame);
+        }
+      };
+
+      requestAnimationFrame(frame);
+    }
+
+    animateChartIn();
 
     function formatGoldTons(value) {
       return value >= 1000
