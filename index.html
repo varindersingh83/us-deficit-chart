@@ -477,27 +477,38 @@
       script.async = true;
       script.src = "https://gc.zgo.at/count.js";
       script.dataset.goatcounter = GOATCOUNTER_URL;
-      script.onload = async () => {
-        const endpointBase = GOATCOUNTER_URL.replace(/\/count$/, "");
-        const goatPath = window.goatcounter?.get_data?.().p || window.location.pathname;
-
-        try {
-          const response = await fetch(`${endpointBase}/counter/${encodeURIComponent(goatPath)}.json`);
-          if (!response.ok) {
-            throw new Error(`GoatCounter counter request failed with ${response.status}`);
+      script.onload = () => {
+        const renderCounter = () => {
+          if (!window.goatcounter?.visit_count) {
+            return false;
           }
 
-          const payload = await response.json();
-          const rawCount = String(payload.count ?? "0");
-          const displayCount = /^\d+$/.test(rawCount)
-            ? rawCount.padStart(5, "0")
-            : rawCount;
+          counterRoot.innerHTML = "";
+          window.goatcounter.visit_count({
+            append: "#visitorCounter",
+            no_branding: true,
+            type: "html"
+          });
+          return true;
+        };
 
-          counterRoot.innerHTML = `<span class="stat-subtext">Visitor#: ${displayCount}</span>`;
-        } catch (error) {
-          console.warn("Visitor counter unavailable", error);
-          counterRoot.innerHTML = '<span class="stat-subtext">Visitor#: unavailable</span>';
+        if (renderCounter()) {
+          return;
         }
+
+        let attempts = 0;
+        const timer = window.setInterval(() => {
+          attempts += 1;
+          if (renderCounter()) {
+            window.clearInterval(timer);
+            return;
+          }
+
+          if (attempts >= 20) {
+            window.clearInterval(timer);
+            counterRoot.innerHTML = '<span class="stat-subtext">Visitor#: unavailable</span>';
+          }
+        }, 150);
       };
       document.body.appendChild(script);
     }
