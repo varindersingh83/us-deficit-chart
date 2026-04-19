@@ -13,6 +13,8 @@
       --grid: rgba(24, 36, 48, 0.12);
       --line: #0d5c63;
       --line-glow: rgba(13, 92, 99, 0.18);
+      --gold-line: #b58422;
+      --gold-glow: rgba(181, 132, 34, 0.18);
       --deficit: #c53d30;
       --surplus: #2a8c5b;
       --annotation: #9d6b2f;
@@ -88,36 +90,6 @@
       line-height: 0.95;
       letter-spacing: -0.03em;
       text-align: center;
-    }
-
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin: 24px 0 18px;
-    }
-
-    .stat {
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(24, 36, 48, 0.08);
-      border-radius: 18px;
-      padding: 16px 18px;
-      backdrop-filter: blur(10px);
-    }
-
-    .stat-label {
-      color: var(--muted);
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 8px;
-    }
-
-    .stat-value {
-      font-size: clamp(1.2rem, 2vw, 2rem);
-      line-height: 1;
-      font-weight: 700;
-      letter-spacing: -0.03em;
     }
 
     .stat-subtext {
@@ -279,10 +251,6 @@
         border-radius: 22px;
       }
 
-      .summary {
-        grid-template-columns: 1fr;
-      }
-
       .footer {
         flex-direction: column;
       }
@@ -294,17 +262,15 @@
     <div class="eyebrow" style="text-align:center;">United States Fiscal Story • 1980–2026</div>
     <h1>The Climb From $1 Trillion to Nearly $39 Trillion</h1>
 
-    <section class="summary" id="summary"></section>
-
     <section class="chart-wrap" id="chartWrap">
       <svg id="chart" viewBox="0 0 1460 920" role="img" aria-label="US debt and annual deficit chart"></svg>
       <div class="tooltip" id="tooltip" aria-hidden="true"></div>
     </section>
 
     <div class="footer">
-      <div><strong>Reading the chart:</strong> Upward red bars mean the government ran a deficit that year. Downward green bars mark a surplus.</div>
+      <div><strong>Reading the chart:</strong> Upward red bars mean the government ran a deficit that year. The teal line tracks debt in dollars, while the gold line converts that debt into metric tons of gold at each year's average USD gold price.</div>
       <div class="footer-note">
-        <div><strong>Note:</strong> 2026 is shown as a projection based on the source data you provided.</div>
+        <div><strong>Note:</strong> 2026 debt is shown as a projection, and 2026 gold uses a year-to-date average price.</div>
         <div class="visitor-inline" id="visitorCounter"><span class="stat-subtext">Visitor#: 00000</span></div>
       </div>
     </div>
@@ -312,7 +278,7 @@
 
   <script>
     const GOATCOUNTER_URL = "https://varindersingh83.goatcounter.com/count";
-    const data = [
+    const rawData = [
       { year: 1980, annual: -0.07, debt: 0.91, admin: "Jimmy Carter", event: "High inflation; Iran hostage crisis; early 1980s recession begins." },
       { year: 1981, annual: -0.08, debt: 1.00, admin: "Ronald Reagan", event: "Reagan tax cuts passed; severe recession takes hold." },
       { year: 1982, annual: -0.13, debt: 1.14, admin: "Ronald Reagan", event: "Recession peaks with high unemployment; debt crosses $1 trillion." },
@@ -361,6 +327,61 @@
       { year: 2025, annual: -1.78, debt: 37.64, admin: "Donald Trump", event: "Shifting trade and tax policies; ongoing interest burden on debt." },
       { year: 2026, annual: -1.90, debt: 38.80, admin: "Donald Trump", event: "Elevated deficit driven heavily by compounding interest payments." }
     ];
+    const annualGoldPriceUsd = {
+      1980: 612.80,
+      1981: 459.42,
+      1982: 374.66,
+      1983: 410.31,
+      1984: 361.06,
+      1985: 317.48,
+      1986: 366.74,
+      1987: 446.68,
+      1988: 436.55,
+      1989: 381.11,
+      1990: 383.81,
+      1991: 362.23,
+      1992: 343.82,
+      1993: 360.38,
+      1994: 384.22,
+      1995: 384.25,
+      1996: 387.77,
+      1997: 330.98,
+      1998: 294.28,
+      1999: 278.84,
+      2000: 279.21,
+      2001: 271.37,
+      2002: 310.70,
+      2003: 364.22,
+      2004: 409.90,
+      2005: 445.39,
+      2006: 605.03,
+      2007: 697.40,
+      2008: 872.21,
+      2009: 974.07,
+      2010: 1227.31,
+      2011: 1572.72,
+      2012: 1668.75,
+      2013: 1409.46,
+      2014: 1266.24,
+      2015: 1159.94,
+      2016: 1247.97,
+      2017: 1258.42,
+      2018: 1268.95,
+      2019: 1393.99,
+      2020: 1771.35,
+      2021: 1798.82,
+      2022: 1801.90,
+      2023: 1943.58,
+      2024: 2389.84,
+      2025: 3496.08,
+      2026: 4845.33
+    };
+    const TROY_OUNCE_TO_GRAMS = 31.1034768;
+    const data = rawData.map(item => {
+      const goldPrice = annualGoldPriceUsd[item.year];
+      const goldMetricTons = (item.debt * 1_000_000_000_000 / goldPrice) * TROY_OUNCE_TO_GRAMS / 1_000_000;
+      return { ...item, goldPrice, goldMetricTons };
+    });
 
     const svg = document.getElementById("chart");
     const chartWrap = document.getElementById("chartWrap");
@@ -383,6 +404,7 @@
     const debtMax = 40;
     const annualMin = -3.3;
     const annualMax = 0.35;
+    const goldTonsMax = Math.ceil(Math.max(...data.map(d => d.goldMetricTons)) / 100000) * 100000;
 
     const adminBands = [];
     let start = 0;
@@ -397,10 +419,7 @@
       }
     }
 
-    const summary = document.getElementById("summary");
-    const firstTrillionYear = data.find(d => d.debt >= 1)?.year ?? 1981;
     const latest = data[data.length - 1];
-    const worstDeficit = data.reduce((a, b) => (Math.abs(a.annual) > Math.abs(b.annual) ? a : b));
     const adminLabelMap = {
       "Jimmy Carter": "Carter",
       "Ronald Reagan": "Reagan",
@@ -411,18 +430,6 @@
       "Donald Trump": "Trump",
       "Joe Biden": "Biden"
     };
-    const stats = [
-      { label: "Debt at the $1T mark", value: `$1.0T in ${firstTrillionYear}` },
-      { label: "Latest debt shown", value: `$${latest.debt.toFixed(2)}T in ${latest.year}` },
-      { label: "Largest annual deficit", value: `$${Math.abs(worstDeficit.annual).toFixed(2)}T in ${worstDeficit.year}` }
-    ];
-
-    stats.forEach(stat => {
-      const node = document.createElement("div");
-      node.className = "stat";
-      node.innerHTML = `<div class="stat-label">${stat.label}</div><div class="stat-value">${stat.value}</div>`;
-      summary.appendChild(node);
-    });
 
     function initVisitorCounter() {
       const counterRoot = document.getElementById("visitorCounter");
@@ -432,33 +439,39 @@
         return;
       }
 
+      const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+      if (localHosts.has(window.location.hostname)) {
+        counterRoot.innerHTML = '<span class="stat-subtext">Visitor#: live on deployed site</span>';
+        return;
+      }
+
       counterRoot.innerHTML = "";
 
       const script = document.createElement("script");
       script.async = true;
       script.src = "https://gc.zgo.at/count.js";
       script.dataset.goatcounter = GOATCOUNTER_URL;
-      script.onload = () => {
-        const timer = window.setInterval(() => {
-          if (window.goatcounter && window.goatcounter.visit_count) {
-            window.clearInterval(timer);
-            window.goatcounter.visit_count({
-              append: "#visitorCounter",
-              style: `
-                div {
-                  background-color: transparent;
-                  color: #596574;
-                  font-family: "Avenir Next", "Segoe UI", sans-serif;
-                  width: auto;
-                  padding: 0;
-                  margin: 0;
-                  border: 0;
-                  box-shadow: none;
-                }
-              `
-            });
+      script.onload = async () => {
+        const endpointBase = GOATCOUNTER_URL.replace(/\/count$/, "");
+        const goatPath = window.goatcounter?.get_data?.().p || window.location.pathname;
+
+        try {
+          const response = await fetch(`${endpointBase}/counter/${encodeURIComponent(goatPath)}.json`);
+          if (!response.ok) {
+            throw new Error(`GoatCounter counter request failed with ${response.status}`);
           }
-        }, 100);
+
+          const payload = await response.json();
+          const rawCount = String(payload.count ?? "0");
+          const displayCount = /^\d+$/.test(rawCount)
+            ? rawCount.padStart(5, "0")
+            : rawCount;
+
+          counterRoot.innerHTML = `<span class="stat-subtext">Visitor#: ${displayCount}</span>`;
+        } catch (error) {
+          console.warn("Visitor counter unavailable", error);
+          counterRoot.innerHTML = '<span class="stat-subtext">Visitor#: unavailable</span>';
+        }
       };
       document.body.appendChild(script);
     }
@@ -491,6 +504,11 @@
       return baselineY - t * negativeHeight;
     };
 
+    const yGold = tons => {
+      const t = tons / goldTonsMax;
+      return debtBottom - t * (debtBottom - debtTop);
+    };
+
     const defs = make("defs");
     const debtGradient = make("linearGradient", { id: "debtGradient", x1: "0%", y1: "0%", x2: "0%", y2: "100%" }, defs);
     make("stop", { offset: "0%", "stop-color": "#0d5c63" }, debtGradient);
@@ -499,6 +517,14 @@
     const debtArea = make("linearGradient", { id: "debtArea", x1: "0%", y1: "0%", x2: "0%", y2: "100%" }, defs);
     make("stop", { offset: "0%", "stop-color": "rgba(13,92,99,0.30)" }, debtArea);
     make("stop", { offset: "100%", "stop-color": "rgba(13,92,99,0.02)" }, debtArea);
+
+    const goldGradient = make("linearGradient", { id: "goldGradient", x1: "0%", y1: "0%", x2: "0%", y2: "100%" }, defs);
+    make("stop", { offset: "0%", "stop-color": "#d3a53a" }, goldGradient);
+    make("stop", { offset: "100%", "stop-color": "#8f6615" }, goldGradient);
+
+    const goldGlow = make("filter", { id: "goldGlow", x: "-20%", y: "-20%", width: "140%", height: "140%" }, defs);
+    make("feGaussianBlur", { stdDeviation: "8", result: "blur" }, goldGlow);
+    make("feMerge", {}, goldGlow).innerHTML = "<feMergeNode in='blur'/><feMergeNode in='SourceGraphic'/>";
 
     const glow = make("filter", { id: "glow", x: "-20%", y: "-20%", width: "140%", height: "140%" }, defs);
     make("feGaussianBlur", { stdDeviation: "10", result: "blur" }, glow);
@@ -555,6 +581,18 @@
         "font-size": "13"
       });
       label.textContent = value < 1 ? `${value}T` : `$${value}T debt`;
+    });
+
+    [0, 100000, 200000, 300000, 400000, 500000, 600000, goldTonsMax].forEach((value, index, values) => {
+      if (index !== values.length - 1 && values.indexOf(value) !== index) return;
+      const y = yGold(value);
+      const label = make("text", {
+        x: margin.left + plotWidth + 14,
+        y: y + 5,
+        fill: "#8a6720",
+        "font-size": "13"
+      });
+      label.textContent = value === 0 ? "0t gold" : `${Math.round(value / 1000)}k t gold`;
     });
 
     for (let year = 1980; year <= 2026; year += 5) {
@@ -629,6 +667,30 @@
       "stroke-linejoin": "round"
     });
 
+    const goldPath = data
+      .map((d, i) => `${i === 0 ? "M" : "L"} ${x(d.year)} ${yGold(d.goldMetricTons)}`)
+      .join(" ");
+
+    make("path", {
+      d: goldPath,
+      fill: "none",
+      stroke: "var(--gold-glow)",
+      "stroke-width": 12,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+      filter: "url(#goldGlow)"
+    });
+
+    make("path", {
+      d: goldPath,
+      fill: "none",
+      stroke: "url(#goldGradient)",
+      "stroke-width": 4,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+      "stroke-dasharray": "9 7"
+    });
+
     data.forEach((d, index) => {
       const isMilestone =
         d.year === 1981 ||
@@ -672,16 +734,60 @@
       dot.addEventListener("blur", deactivate);
     });
 
+    data.forEach((d, index) => {
+      const isMilestone =
+        d.year === 1981 ||
+        d.year === 2008 ||
+        d.year === 2020 ||
+        index === data.length - 1;
+
+      const dot = make("circle", {
+        cx: x(d.year),
+        cy: yGold(d.goldMetricTons),
+        r: isMilestone ? 4.8 : 3,
+        fill: "#fff7e4",
+        stroke: "var(--gold-line)",
+        "stroke-width": isMilestone ? 2.6 : 1.8,
+        tabindex: "0",
+        "data-year": d.year,
+        style: "cursor:pointer; transition: transform 180ms ease, r 180ms ease, stroke-width 180ms ease, fill 180ms ease;"
+      });
+
+      const hoverRadius = isMilestone ? 8.4 : 6.8;
+      const baseRadius = isMilestone ? 4.8 : 3;
+      const baseStroke = isMilestone ? 2.6 : 1.8;
+
+      const activate = () => {
+        dot.setAttribute("r", hoverRadius);
+        dot.setAttribute("stroke-width", "3.6");
+        dot.setAttribute("fill", "#ffe2a6");
+        showTooltip(d, x(d.year), yGold(d.goldMetricTons));
+      };
+
+      const deactivate = () => {
+        dot.setAttribute("r", baseRadius);
+        dot.setAttribute("stroke-width", String(baseStroke));
+        dot.setAttribute("fill", "#fff7e4");
+        hideTooltip();
+      };
+
+      dot.addEventListener("mouseenter", activate);
+      dot.addEventListener("focus", activate);
+      dot.addEventListener("mouseleave", deactivate);
+      dot.addEventListener("blur", deactivate);
+    });
+
     const legend = make("g");
     const legendItems = [
       { color: "var(--line)", label: "Total national debt" },
+      { color: "var(--gold-line)", label: "Debt in gold weight" },
       { color: "var(--deficit)", label: "Annual deficit" },
       { color: "var(--surplus)", label: "Annual surplus" }
     ];
 
     legendItems.forEach((item, index) => {
       const y = plotBottom + 64;
-      const x0 = margin.left + index * 220;
+      const x0 = margin.left + index * 190;
       make("rect", { x: x0, y: y - 11, width: 28, height: 12, rx: 6, fill: item.color }, legend);
       make("text", { x: x0 + 40, y, fill: "#43515f", "font-size": "14", "font-weight": "600" }, legend).textContent = item.label;
     });
@@ -698,11 +804,19 @@
 
     make("text", {
       x: width - 26,
-      y: yDebt(finalPoint.debt) + 14,
-      fill: "#5e6a76",
-      "font-size": "14",
+      y: yGold(finalPoint.goldMetricTons) - 8,
+      fill: "#9a6d13",
+      "font-size": "24",
+      "font-weight": "800",
       "text-anchor": "end"
-    }).textContent = `${finalPoint.year} projected total debt`;
+    }).textContent = `${Math.round(finalPoint.goldMetricTons / 1000)}k t`;
+
+    function formatGoldTons(value) {
+      return value >= 1000
+        ? `${(value / 1000).toFixed(1)}k metric tons`
+        : `${value.toFixed(0)} metric tons`;
+    }
+
     function formatAnnual(value) {
       const sign = value >= 0 ? "+" : "-";
       return `${sign}$${Math.abs(value).toFixed(2)}T`;
@@ -714,6 +828,8 @@
         <div class="tooltip-title">${item.admin}</div>
         <div class="tooltip-meta">
           <span>Total debt</span><span>$${item.debt.toFixed(2)}T</span>
+          <span>Avg gold price</span><span>$${item.goldPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/oz</span>
+          <span>Debt in gold</span><span>${formatGoldTons(item.goldMetricTons)}</span>
           <span>Annual balance</span><span>${formatAnnual(item.annual)}</span>
         </div>
         <div class="tooltip-note">${item.event}</div>
